@@ -133,3 +133,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # this only because in localhost
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+# add model account user
+AUTH_USER_MODEL = "accounts.User"
