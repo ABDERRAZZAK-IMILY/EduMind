@@ -133,3 +133,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # this only because in localhost
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+# add model account user
+AUTH_USER_MODEL = "accounts.User"
+
+
+# jwt setting
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+
+# minio settings 
+
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
+MINIO_BUCKET_NAME = "documents"
