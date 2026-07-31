@@ -137,3 +137,11 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # add model account user
 AUTH_USER_MODEL = "accounts.User"
+
+
+# jwt setting
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
