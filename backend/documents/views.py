@@ -8,6 +8,9 @@ from .models import Document
 from .serializers import UploadUrlRequestSerializer, DocumentSerializer
 from .storage import generate_presigned_upload_url
 
+from rest_framework.generics import get_object_or_404
+
+
 
 class RequestUploadUrlView(APIView):
     permission_classes = [IsAuthenticated]
@@ -45,3 +48,17 @@ class RequestUploadUrlView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class ConfirmUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, document_id):
+        document = get_object_or_404(Document, id=document_id, owner=request.user)
+        document.status = Document.Status.PROCESSING
+        document.save()
+
+        # chunking + embeddings منبعد 
+        # process_document.delay(document.id)  # هنا Celery كنخدم ب
+
+        return Response(DocumentSerializer(document).data)        
