@@ -1,0 +1,87 @@
+import json
+from documents.services import get_groq_client, get_chroma_client, get_embedding_model
+
+
+def get_document_chunks(document_id, limit=20):
+    # get chunks from docment to use it in quation
+    client = get_chroma_client()
+    collection = client.get_or_create_collection(name="documents")
+
+    results = collection.get(
+        where={"document_id": document_id},
+        limit=limit,
+    )
+    return results["documents"], results["metadatas"]
+
+
+def generate_quiz_questions(document_id, num_questions=5, difficulty="MOYEN"):
+    texts, metadatas = get_document_chunks(document_id)
+
+    if not texts:
+        raise ValueError("Aucun contenu disponible pour ce document.")
+
+    context = "\n\n".join(
+        f"[page {meta['page']}]: {text}" for text, meta in zip(texts, metadatas)
+    )
+
+    prompt = f"""Tu es un générateur de quiz pédagogique. À partir du contenu ci-dessous,
+génère exactement {num_questions} questions de niveau {difficulty}, en mélangeant
+des QCM (avec 4 options) et des questions Vrai/Faux.
+
+IMPORTANT:
+- Réponds UNIQUEMENT avec le tableau JSON, sans aucun texte avant ou après.
+- Le champ "type" doit être EXACTEMENT "QCM" ou "VRAI_FAUX" (jamais "Vrai/Faux").
+
+Format exact:
+[
+  {{
+    "type": "QCM",
+    "text": "...",
+    "options": ["...", "...", "...", "..."],
+    "correct_answer": "B",
+    "explanation": "...",
+    "source_page": 1
+  }},
+  {{
+    "type": "VRAI_FAUX",
+    "text": "...",
+    "options": null,
+    "correct_answer": "Vrai",
+    "explanation": "...",
+    "source_page": 2
+  }}
+]
+
+Contenu:
+{context}
+
+JSON:"""
+
+    client = get_groq_client()
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+    )
+
+    raw_content = response.choices[0].message.content
+
+    start = raw_content.find("[")
+    end = raw_content.rfind("]")
+    if start == -1 or end == -1:
+        raise ValueError(f"Impossible d'extraire le JSON. Réponse brute: {raw_content}")
+
+    json_str = raw_content[start:end + 1]
+    questions = json.loads(json_str)
+
+    type_mapping = {
+        "vrai/faux": "VRAI_FAUX",
+        "vrai_faux": "VRAI_FAUX",
+        "qcm": "QCM",
+        "ouverte": "OUVERTE",
+    }
+    for q in questions:
+        normalized = type_mapping.get(q["type"].lower().strip(), q["type"].upper())
+        q["type"] = normalized
+
+    return questions
