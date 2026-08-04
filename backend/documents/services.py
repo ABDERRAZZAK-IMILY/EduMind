@@ -131,3 +131,40 @@ Réponse:"""
         messages=[{"role": "user", "content": prompt}],
     )
     return response.choices[0].message.content
+
+
+
+
+
+
+def answer_question_stream(document_id, question):
+    chunks_text, metadatas = retrieve_relevant_chunks(document_id, question)
+
+    context = "\n\n".join(
+        f"[Source {i+1}, page {meta['page']}]: {text}"
+        for i, (text, meta) in enumerate(zip(chunks_text, metadatas))
+    )
+
+    prompt = f"""Tu es un assistant pédagogique. Réponds à la question de l'apprenant
+en te basant UNIQUEMENT sur le contexte fourni ci-dessous. Cite tes sources
+en utilisant [Source X] dans ta réponse. Utilise UNIQUEMENT le numéro de page
+donné, sans inventer de description de la source.
+
+Contexte:
+{context}
+
+Question: {question}
+
+Réponse:"""
+
+    groq_client = get_groq_client()
+    stream = groq_client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}],
+        stream=True,
+    )
+
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            yield delta
