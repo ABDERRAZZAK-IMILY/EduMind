@@ -23,6 +23,7 @@ class AskQuestionView(APIView):
         # verfie that the docment is for actuile user
         document = get_object_or_404(Document, id=document_id, owner=request.user)
 
+        # i need to remove the processing condition when i complete test
         if document.status != Document.Status.READY and document.status != Document.Status.PROCESSING:
             return Response(
                 {"detail": "Ce document n'est pas encore prêt pour être interrogé."},
