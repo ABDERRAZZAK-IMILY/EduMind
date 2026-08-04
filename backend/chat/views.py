@@ -8,6 +8,9 @@ from documents.models import Document
 from documents.services import answer_question
 from .serializers import AskQuestionSerializer
 
+from django.http import StreamingHttpResponse
+from documents.services import answer_question_stream
+
 
 class AskQuestionView(APIView):
     permission_classes = [IsAuthenticated]
@@ -33,3 +36,31 @@ class AskQuestionView(APIView):
         answer = answer_question(document_id, question)
 
         return Response({"answer": answer})
+
+
+
+
+
+
+
+class AskQuestionStreamView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AskQuestionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        document_id = serializer.validated_data["document_id"]
+        question = serializer.validated_data["question"]
+
+        document = get_object_or_404(Document, id=document_id, owner=request.user)
+
+        def event_stream():
+            for chunk in answer_question_stream(document_id, question):
+                yield f"data: {chunk}\n\n"
+            yield "data: [DONE]\n\n"
+
+        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"  # to stop buffring
+        return response
