@@ -28,7 +28,11 @@ def generate_quiz_questions(document_id, num_questions=5, difficulty="MOYEN"):
 génère exactement {num_questions} questions de niveau {difficulty}, en mélangeant
 des QCM (avec 4 options) et des questions Vrai/Faux.
 
-Réponds UNIQUEMENT en JSON valide, sous cette forme exacte (un tableau d'objets) :
+IMPORTANT:
+- Réponds UNIQUEMENT avec le tableau JSON, sans aucun texte avant ou après.
+- Le champ "type" doit être EXACTEMENT "QCM" ou "VRAI_FAUX" (jamais "Vrai/Faux").
+
+Format exact:
 [
   {{
     "type": "QCM",
@@ -62,7 +66,22 @@ JSON:"""
 
     raw_content = response.choices[0].message.content
 
-    # clean the llm response 
-    cleaned = raw_content.strip().removeprefix("```json").removesuffix("```").strip()
+    start = raw_content.find("[")
+    end = raw_content.rfind("]")
+    if start == -1 or end == -1:
+        raise ValueError(f"Impossible d'extraire le JSON. Réponse brute: {raw_content}")
 
-    return json.loads(cleaned)
+    json_str = raw_content[start:end + 1]
+    questions = json.loads(json_str)
+
+    type_mapping = {
+        "vrai/faux": "VRAI_FAUX",
+        "vrai_faux": "VRAI_FAUX",
+        "qcm": "QCM",
+        "ouverte": "OUVERTE",
+    }
+    for q in questions:
+        normalized = type_mapping.get(q["type"].lower().strip(), q["type"].upper())
+        q["type"] = normalized
+
+    return questions
