@@ -1,6 +1,8 @@
 import json
 from documents.services import get_groq_client, get_chroma_client, get_embedding_model
 
+from .models import Quiz, Question
+
 
 def get_document_chunks(document_id, limit=20):
     # get chunks from docment to use it in quation
@@ -85,3 +87,32 @@ JSON:"""
         q["type"] = normalized
 
     return questions
+
+
+
+
+def create_quiz_with_questions(user, document_id, num_questions=5, difficulty="MOYEN"):
+    from documents.models import Document
+    document = Document.objects.get(id=document_id, owner=user)
+
+    questions_data = generate_quiz_questions(document_id, num_questions, difficulty)
+
+    quiz = Quiz.objects.create(
+        owner=user,
+        document=document,
+        difficulty=difficulty,
+        num_questions=len(questions_data),
+    )
+
+    for q in questions_data:
+        Question.objects.create(
+            quiz=quiz,
+            type=q["type"],
+            text=q["text"],
+            options=q.get("options"),
+            correct_answer=q["correct_answer"],
+            explanation=q.get("explanation", ""),
+            source_page=q.get("source_page"),
+        )
+
+    return quiz    
