@@ -28,7 +28,8 @@ def generate_quiz_questions(document_id, num_questions=5, difficulty="MOYEN"):
 
     prompt = f"""Tu es un générateur de quiz pédagogique. À partir du contenu ci-dessous,
 génère exactement {num_questions} questions de niveau {difficulty}, en mélangeant
-des QCM (avec 4 options) et des questions Vrai/Faux.
+des QCM (avec 4 options), des questions Vrai/Faux, et 1 à 2 questions ouvertes
+(type "OUVERTE") qui demandent une réponse rédigée courte.
 
 IMPORTANT:
 - Réponds UNIQUEMENT avec le tableau JSON, sans aucun texte avant ou après.
@@ -51,6 +52,14 @@ Format exact:
     "correct_answer": "Vrai",
     "explanation": "...",
     "source_page": 2
+  }},
+  {{
+    "type": "OUVERTE",
+    "text": "...",
+    "options": null,
+    "correct_answer": "Éléments de réponse attendus, sous forme de critères clés",
+    "explanation": "...",
+    "source_page": 3
   }}
 ]
 
@@ -116,3 +125,31 @@ def create_quiz_with_questions(user, document_id, num_questions=5, difficulty="M
         )
 
     return quiz    
+
+
+
+def submit_quiz(quiz, answers_data):
+    answers_map = {a["question_id"]: a["answer"] for a in answers_data}
+    correct_count = 0
+    total = quiz.questions.count()
+
+    for question in quiz.questions.all():
+        submitted = answers_map.get(question.id, "").strip()
+        question.submitted_answer = submitted
+
+        if question.type in ["QCM", "VRAI_FAUX"]:
+            is_correct = submitted.strip().lower() == question.correct_answer.strip().lower()
+            question.is_correct = is_correct
+            if is_correct:
+                correct_count += 1
+        else:
+            question.is_correct = None
+
+        question.save()
+
+    from django.utils import timezone
+    quiz.score = round((correct_count / total) * 100, 1) if total > 0 else 0
+    quiz.completed_at = timezone.now()
+    quiz.save()
+
+    return quiz
