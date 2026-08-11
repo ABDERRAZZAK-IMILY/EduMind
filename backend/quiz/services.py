@@ -142,8 +142,12 @@ def submit_quiz(quiz, answers_data):
             question.is_correct = is_correct
             if is_correct:
                 correct_count += 1
-        else:
-            question.is_correct = None
+        elif question.type == "OUVERTE":
+            is_correct, feedback = evaluate_open_answer(question, submitted)
+            question.is_correct = is_correct
+            question.feedback = feedback
+            if is_correct:
+                correct_count += 1
 
         question.save()
 
@@ -153,7 +157,6 @@ def submit_quiz(quiz, answers_data):
     quiz.save()
 
     return quiz
-
 
 
 
