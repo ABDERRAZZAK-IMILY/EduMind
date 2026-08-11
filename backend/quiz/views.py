@@ -6,6 +6,11 @@ from rest_framework import status
 from .serializers import GenerateQuizSerializer, QuizSerializer
 from .services import create_quiz_with_questions
 
+from rest_framework.generics import get_object_or_404
+from .serializers import SubmitQuizSerializer
+from .services import submit_quiz
+from .models import Quiz
+
 
 class GenerateQuizView(APIView):
     permission_classes = [IsAuthenticated]
@@ -22,3 +27,18 @@ class GenerateQuizView(APIView):
         )
 
         return Response(QuizSerializer(quiz).data, status=status.HTTP_201_CREATED)
+
+
+
+class SubmitQuizView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, quiz_id):
+        quiz = get_object_or_404(Quiz, id=quiz_id, owner=request.user)
+
+        serializer = SubmitQuizSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        quiz = submit_quiz(quiz, serializer.validated_data["answers"])
+
+        return Response(QuizSerializer(quiz).data)

@@ -22,3 +22,22 @@ class QuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = ["id", "document", "difficulty", "num_questions", "created_at", "score", "questions"]
+
+
+class SubmitAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answer = serializers.CharField()
+
+
+class SubmitQuizSerializer(serializers.Serializer):
+    answers = SubmitAnswerSerializer(many=True)
+
+
+
+
+class QuestionResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ["id", "type", "text", "options", "source_page",
+                  "correct_answer", "explanation", "submitted_answer",
+                  "is_correct", "feedback"]

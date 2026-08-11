@@ -142,8 +142,12 @@ def submit_quiz(quiz, answers_data):
             question.is_correct = is_correct
             if is_correct:
                 correct_count += 1
-        else:
-            question.is_correct = None
+        elif question.type == "OUVERTE":
+            is_correct, feedback = evaluate_open_answer(question, submitted)
+            question.is_correct = is_correct
+            question.feedback = feedback
+            if is_correct:
+                correct_count += 1
 
         question.save()
 
@@ -153,3 +157,39 @@ def submit_quiz(quiz, answers_data):
     quiz.save()
 
     return quiz
+
+
+
+def evaluate_open_answer(question, submitted_answer):
+    prompt = f"""Tu es un correcteur pédagogique. Évalue la réponse de l'apprenant
+par rapport aux critères attendus.
+
+Question: {question.text}
+
+Critères de réponse attendus: {question.correct_answer}
+
+Réponse de l'apprenant: {submitted_answer}
+
+Réponds UNIQUEMENT en JSON valide, sous cette forme exacte:
+{{
+  "is_correct": true ou false,
+  "feedback": "Explication courte de la correction, en 1-2 phrases"
+}}
+
+JSON:"""
+
+    client = get_groq_client()
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+    )
+
+    raw = response.choices[0].message.content
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start == -1 or end == -1:
+        return False, "Évaluation automatique indisponible."
+
+    result = json.loads(raw[start:end + 1])
+    return result.get("is_correct", False), result.get("feedback", "")
