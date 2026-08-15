@@ -69,3 +69,16 @@ def run_chat_workflow(document_id: int, question: str, level: str = "INTERMEDIAI
     result = crew.kickoff()
     return str(result)
 
+
+def run_quiz_generation_workflow(user, document_id: int, num_questions: int = 5, difficulty: str = "MOYEN"):
+    """
+    Exécution multi-agents pour la génération de quiz.
+    Utilise Generator Agent pour construire le quiz et sauvegarder en base.
+    """
+    return create_quiz_with_questions(
+        user=user,
+        document_id=document_id,
+        num_questions=num_questions,
+        difficulty=difficulty,
+    )
+
