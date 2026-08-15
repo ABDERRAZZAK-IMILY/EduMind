@@ -50,3 +50,22 @@ Réponse pédagogique :"""
 
     return prompt, chunks_text, metadatas
 
+
+def run_chat_workflow(document_id: int, question: str, level: str = "INTERMEDIAIRE") -> str:
+    """
+    Exécution synchrone multi-agents pour /api/chat/ask/
+    Orchestrateur -> Agent RAG -> Agent Pédagogique
+    """
+    prompt, _, _ = prepare_pedagogical_prompt(document_id, question, level)
+    
+    # Exécution via l'agent pédagogique CrewAI
+    pedagogical_agent = get_pedagogical_agent()
+    task = Task(
+        description=f"Rédige la réponse pédagogique finale basée sur ce prompt pré-établi:\n\n{prompt}",
+        expected_output="Une réponse pédagogique complète avec citations [Source X, page Y]",
+        agent=pedagogical_agent,
+    )
+    crew = Crew(agents=[pedagogical_agent], tasks=[task], process=Process.sequential)
+    result = crew.kickoff()
+    return str(result)
+
