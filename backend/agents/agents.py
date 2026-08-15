@@ -22,3 +22,15 @@ def get_llm():
         base_url="https://api.groq.com/openai/v1",
         temperature=0.2,
     )
+
+
+def get_orchestrator_agent() -> Agent:
+    return Agent(
+        role="Orchestrateur d'Intention Pédagogique",
+        goal="Analyser la demande de l'apprenant et classifier précisément son intention en UNE catégorie parmi QUESTION, RESUME, ou QUIZ.",
+        backstory="""Tu es le premier point de contact intelligent de la plateforme EduMind. 
+Ta tâche est de déterminer l'objectif de l'utilisateur (poser une question factuelle/explication, demander une synthèse/résumé du cours, ou demander un quiz d'entraînement).""",
+        llm=get_llm(),
+        verbose=False,
+    )
+
