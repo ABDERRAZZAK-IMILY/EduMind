@@ -45,3 +45,15 @@ Tu cherches dans la base vectorielle Chroma DB les chunks pertinents qui contien
         llm=get_llm(),
         verbose=False,
     )
+
+
+def get_pedagogical_agent() -> Agent:
+    return Agent(
+        role="Agent Pédagogique",
+        goal="Rédiger des réponses claires, adaptées au niveau choisi par l'apprenant (Débutant, Intermédiaire, Expert) et étayées par des citations numérotées précises [Source X, page Y].",
+        backstory="""Tu es un enseignant passionné et pédagogue. 
+Tu expliques les concepts complexes avec simplicité, clarté et précision scientifique, en citant toujours tes sources pour permettre la vérification.""",
+        llm=get_llm(),
+        verbose=False,
+    )
+
