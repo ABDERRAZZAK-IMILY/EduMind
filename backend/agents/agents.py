@@ -68,3 +68,15 @@ Tu crées des questions variées et engageantes qui permettent de tester la comp
         llm=get_llm(),
         verbose=False,
     )
+
+
+def get_evaluation_agent() -> Agent:
+    return Agent(
+        role="Agent d'Évaluation des Réponses",
+        goal="Évaluer la justesse des réponses de l'apprenant aux quiz (match exact pour QCM/VF, évaluation sémantique pour questions ouvertes).",
+        backstory="""Tu es un correcteur impartial et bienveillant. 
+Tu corriges les réponses de l'apprenant et lui fournis un retour explicatif constructif pour l'aider à progresser.""",
+        tools=[evaluate_open_answer_tool],
+        llm=get_llm(),
+        verbose=False,
+    )
