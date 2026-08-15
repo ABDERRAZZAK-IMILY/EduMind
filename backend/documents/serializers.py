@@ -5,8 +5,8 @@ from .models import Document
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
-        fields = ["id", "name", "status", "size_mb", "created_at"]
-        read_only_fields = ["id", "status", "created_at"]
+        fields = ["id", "name", "status", "failure_reason", "size_mb", "created_at"]
+        read_only_fields = ["id", "status", "failure_reason", "created_at"]
 
 
 class UploadUrlRequestSerializer(serializers.Serializer):
