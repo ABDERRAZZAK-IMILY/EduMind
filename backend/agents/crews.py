@@ -82,3 +82,45 @@ def run_quiz_generation_workflow(user, document_id: int, num_questions: int = 5,
         difficulty=difficulty,
     )
 
+
+def run_quiz_submission_workflow(quiz, answers_data, user_email: str = None):
+    """
+    Exécution multi-agents pour la correction de quiz et notification e-mail.
+    Utilise Evaluation Agent pour évaluer les réponses et Notification Agent pour envoyer l'email.
+    """
+    updated_quiz = submit_quiz(quiz, answers_data)
+
+    # Déclenchement de la notification email via Notification Agent / django.core.mail
+    if user_email:
+        subject = f"🎓 Vos résultats pour le Quiz : {quiz.document.name}"
+        score = updated_quiz.score
+        message_body = (
+            f"Bonjour {quiz.owner.username},\n\n"
+            f"Vous avez terminé le quiz sur le document '{quiz.document.name}'.\n"
+            f"Score obtenu : {score}%\n\n"
+            f"Détail de votre performance :\n"
+            f"- Questions totales : {quiz.questions.count()}\n"
+            f"- Niveau : {quiz.difficulty}\n\n"
+        )
+        if score >= 80:
+            message_body += "Bravo ! Vous maîtrisez très bien ce sujet. Continuez ainsi !\n"
+        elif score >= 50:
+            message_body += "Bon travail ! Pensez à relire les passages cités dans le quiz pour consolider vos acquis.\n"
+        else:
+            message_body += "N'hésitez pas à relancer une session de révision et poser des questions au chat pédagogique pour vous améliorer !\n"
+
+        message_body += "\nL'équipe EduMind"
+
+        try:
+            notification_agent = get_notification_agent()
+            send_mail(
+                subject=subject,
+                message=message_body,
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@edumind.edtech"),
+                recipient_list=[user_email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Erreur d'envoi d'email notification: {e}")
+
+    return updated_quiz
