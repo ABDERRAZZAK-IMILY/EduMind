@@ -34,3 +34,14 @@ Ta tâche est de déterminer l'objectif de l'utilisateur (poser une question fac
         verbose=False,
     )
 
+
+def get_rag_agent() -> Agent:
+    return Agent(
+        role="Agent RAG (Recherche Vectorielle)",
+        goal="Extraire les passages du document PDF les plus pertinents pour répondre à la demande de l'apprenant.",
+        backstory="""Tu es un spécialiste de l'extraction d'information textuelle. 
+Tu cherches dans la base vectorielle Chroma DB les chunks pertinents qui contiennent la réponse aux questions posées.""",
+        tools=[retrieve_chunks_tool],
+        llm=get_llm(),
+        verbose=False,
+    )
