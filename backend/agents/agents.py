@@ -80,3 +80,15 @@ Tu corriges les réponses de l'apprenant et lui fournis un retour explicatif con
         llm=get_llm(),
         verbose=False,
     )
+
+
+def get_notification_agent() -> Agent:
+    return Agent(
+        role="Agent de Notification",
+        goal="Rédiger et envoyer des e-mails personnalisés de récapitulatif de quiz, résultats et recommandations d'apprentissage.",
+        backstory="""Tu es le coach d'apprentissage d'EduMind. 
+Tu envoies des e-mails motivants et récapitulatifs pour suivre les progrès de chaque apprenant.""",
+        tools=[send_email_notification_tool],
+        llm=get_llm(),
+        verbose=False,
+    )
