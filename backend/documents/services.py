@@ -2,11 +2,7 @@ import pdfplumber
 import io
 from .storage import get_s3_client
 from django.conf import settings
-
-
 from groq import Groq
-from django.conf import settings
-
 from sentence_transformers import SentenceTransformer
 import chromadb
 
@@ -40,10 +36,6 @@ def chunk_text(pages, chunk_size=800, overlap=100):
                 chunks.append({"page": page_num, "text": chunk})
             start += chunk_size - overlap
     return chunks
-
-
-
-
 
 
 def get_embedding_model():
@@ -80,11 +72,32 @@ def embed_and_store_chunks(document_id, chunks):
     return len(chunks)
 
 
+def delete_document_vectors(document_id):
+    try:
+        client = get_chroma_client()
+        collection = client.get_or_create_collection(name="documents")
+        collection.delete(where={"document_id": document_id})
+    except Exception:
+        pass
 
 
-
-
-
+def process_document(document):
+    try:
+        file_bytes = download_file_from_minio(document.file_key)
+        pages = extract_text_from_pdf(file_bytes)
+        chunks = chunk_text(pages)
+        if chunks:
+            embed_and_store_chunks(document.id, chunks)
+            document.status = document.Status.READY
+            document.failure_reason = None
+        else:
+            document.status = document.Status.FAILED
+            document.failure_reason = "Aucun texte n'a pu être extrait du document PDF."
+    except Exception as e:
+        document.status = document.Status.FAILED
+        document.failure_reason = str(e)
+    document.save()
+    return document
 
 
 def get_groq_client():
@@ -103,6 +116,8 @@ def retrieve_relevant_chunks(document_id, question, top_k=3):
         n_results=top_k,
         where={"document_id": document_id},
     )
+    if not results.get("documents") or not results["documents"][0]:
+        return [], []
     return results["documents"][0], results["metadatas"][0]
 
 
@@ -131,10 +146,6 @@ Réponse:"""
         messages=[{"role": "user", "content": prompt}],
     )
     return response.choices[0].message.content
-
-
-
-
 
 
 def answer_question_stream(document_id, question):
