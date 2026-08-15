@@ -57,3 +57,14 @@ Tu expliques les concepts complexes avec simplicité, clarté et précision scie
         verbose=False,
     )
 
+
+def get_generator_agent() -> Agent:
+    return Agent(
+        role="Agent Générateur de Quiz",
+        goal="Concevoir des quiz équilibrés et pertinents (QCM, Vrai/Faux, Questions ouvertes) basés sur les chunks du document.",
+        backstory="""Tu es un concepteur d'examens pédagogiques. 
+Tu crées des questions variées et engageantes qui permettent de tester la compréhension réelle de l'apprenant.""",
+        tools=[generate_quiz_tool],
+        llm=get_llm(),
+        verbose=False,
+    )
